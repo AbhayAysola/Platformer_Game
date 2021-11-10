@@ -16,10 +16,9 @@ BACKGROUND_COLOUR = WHITE
 BLOCK_SIZE = 60
 BLOCK_COLOUR = CYAN
 
-ACC = 15
-FRIC = 1
-GRAV = 3
-JUMP = 45
+PLAYER_SPEED = 10
+GRAV = 30
+JUMP = 200
 
 # Initialising
 pygame.init()
@@ -56,11 +55,6 @@ for i in range(int(WINDOW_WIDTH/BLOCK_SIZE)):
     blocks.add(Block("grass_block.png", coordsx, WINDOW_HEIGHT - 2*BLOCK_SIZE))
     coordsx += BLOCK_SIZE
 
-
-class FakePlayer(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-
 # Player stuff
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -70,39 +64,60 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect()
 
         self.col = False
-        self.pos = [0, WINDOW_HEIGHT - 5*BLOCK_SIZE]
-
-    def move(self):    
-        pressed_keys = pygame.key.get_pressed()
-                
-        if pressed_keys[pygame.K_LEFT] and 0 < self.pos[0]:
-            self.pos[0] -= 10
-        if pressed_keys[pygame.K_RIGHT] and self.pos[0] < WINDOW_WIDTH - BLOCK_SIZE:
-            self.pos[0] += 10
+        self.pos = [5*BLOCK_SIZE, WINDOW_HEIGHT - 5*BLOCK_SIZE]
 
     def render(self) -> None:
         self.rect.topleft = self.pos
         windowSurface.blit(self.surf, self.rect)
 
+    def check_col(self):
+        self.rect.topleft = [self.pos[0] + 1, self.pos[1] + 1]
+        col = pygame.sprite.spritecollide(self, blocks, False)
+        if not col:
+            self.rect.topleft = [self.pos[0] - 1, self.pos[1] - 1]
+        return True if col else False
+
+    def move(self, x, y):
+        for i in range(x):
+            if self.check_col():
+                break
+            else:
+                self.pos[0] += 1 if x>0 else -1
+        for i in range(y):
+            if self.check_col():
+                break
+            else:
+                self.pos[1] += 1 if y>0 else -1
+
     def update(self):
-        self.move()
-        for b in blocks:
-            if b.rect.top == self.rect.bottom + 1:
-                hits = True
-        hits = pygame.sprite.spritecollide(self, blocks, False)
-        if hits and not self.col:
-            self.col = True
-            self.pos[1] = hits[0].rect.top - BLOCK_SIZE
-        elif not self.col:
-            self.pos[1] += 10
+        # Left-Right Movement
+        pressed_keys = pygame.key.get_pressed() 
+        if pressed_keys[pygame.K_LEFT] and 0 < self.pos[0]:
+            self.pos[0] -= PLAYER_SPEED
+        if pressed_keys[pygame.K_RIGHT] and self.pos[0] < WINDOW_WIDTH - BLOCK_SIZE:
+            self.pos[0] += PLAYER_SPEED
+        if pressed_keys[pygame.K_SPACE]:
+            self.jump()
+
+        # Gravity
+        if not self.check_col():
+            self.move(0, GRAV)
+        # for b in blocks:
+        #     if b.rect.top == self.rect.bottom + 1:
+        #         hits = True
+        # hits = pygame.sprite.spritecollide(self, blocks, False)
+        # if hits and not self.col:
+        #     self.col = True
+        #     self.pos[1] = hits[0].rect.top - BLOCK_SIZE
+        # elif not self.col:
+        #     self.pos[1] += 10
+
         self.render()
 
 
     def jump(self):
-        hits = pygame.sprite.spritecollide(self, blocks, False)
-        print(hits)
-        if hits:
-            self.pos[1] = -JUMP
+        if self.check_col():
+            self.pos[1] -= JUMP
 
 player = Player()
 
@@ -122,15 +137,13 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminate()
-        if event.type == pygame.KEYDOWN:
-            if event.key in [pygame.K_SPACE, pygame.K_w, pygame.K_UP]:
-                player.jump()
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_ESCAPE:
                 terminate()
 
     for block in blocks:
         block.render()
+
     player.update()
 
     pygame.display.update() # Important
