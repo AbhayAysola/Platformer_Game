@@ -19,7 +19,8 @@ BLOCK_COLOUR = CYAN
 PLAYER_SPEED = 10
 GRAV = 10
 JUMP = 200
-grav_count = 0
+grav_counter = 0
+jump_counter = 0
 
 # Initialising
 pygame.init()
@@ -90,7 +91,7 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.pos[1] += 1 if y>0 else -1
 
-    def update(self, grav_count):
+    def update(self, grav_counter):
         # Left-Right Movement
         pressed_keys = pygame.key.get_pressed() 
         if pressed_keys[pygame.K_LEFT] and 0 < self.pos[0]:
@@ -102,10 +103,10 @@ class Player(pygame.sprite.Sprite):
 
         # Gravity
         if not self.check_col():
-            self.move(0, int(grav_count * GRAV))
+            self.move(0, int(grav_counter * GRAV))
             print(self.pos[1])
             self.render()
-            return grav_count + 0.5
+            return grav_counter + 0.5
         else:
             self.render()
             return 0
@@ -123,9 +124,10 @@ class Player(pygame.sprite.Sprite):
         
 
 
-    def jump(self):
+    def jump(self, jump_counter):
         if self.check_col():
-            self.pos[1] -= JUMP
+            self.pos[1] -= int(jump_counter * JUMP)
+            return jump_counter + 1
             
 
 player = Player()
@@ -153,6 +155,7 @@ while True:
     for block in blocks:
         block.render()
 
-    grav_count = player.update(grav_count)
+    grav_counter = player.update(grav_counter)
+    jump_counter = player.jump(jump_counter)
 
     pygame.display.update() # Important
